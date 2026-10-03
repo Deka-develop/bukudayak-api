@@ -1,0 +1,27 @@
+{
+  "name": "bukudayak-backend-api",
+  "version": "1.0.0",
+  "description": "Backend API for BukuDayak.com - Mayar.id Payment Gateway & Live Shipping Cost Calculation",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "mayar",
+    "rajaongkir",
+    "biteship",
+    "bukudayak",
+    "ecommerce",
+    "shipping",
+    "payment-gateway"
+  ],
+  "author": "Buku Dayak Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}
