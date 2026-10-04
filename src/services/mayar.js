@@ -74,7 +74,8 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
     courierService: String(shipping.service || '-'),
     shippingCost: String(shippingCost),
     subtotalBooks: String(totalAmount - shippingCost),
-    grandTotal: String(totalAmount)
+    grandTotal: String(totalAmount),
+    itemsJson: JSON.stringify(invoiceItems)
   };
   if (customer.postalCode && String(customer.postalCode).trim()) {
     extraData.shippingPostalCode = String(customer.postalCode).trim();
@@ -123,6 +124,23 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
   }
 }
 
+/**
+ * Retrieve invoice details from Mayar
+ */
+async function getInvoice(invoiceId) {
+  if (!isValidApiKey(MAYAR_API_KEY)) {
+    throw new Error('MAYAR_API_KEY belum dikonfigurasi di file environment .env server!');
+  }
+  const response = await axios.get(`https://api.mayar.id/hl/v1/invoice/${invoiceId}`, {
+    headers: {
+      Authorization: `Bearer ${MAYAR_API_KEY}`
+    },
+    timeout: 10000
+  });
+  return response.data?.data;
+}
+
 module.exports = {
-  createInvoice
+  createInvoice,
+  getInvoice
 };

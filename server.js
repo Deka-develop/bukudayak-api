@@ -5,6 +5,7 @@ const cors = require('cors');
 const shippingRoutes = require('./src/routes/shipping');
 const paymentRoutes = require('./src/routes/payment');
 const webhookRoutes = require('./src/routes/webhook');
+const invoiceRoutes = require('./src/routes/invoice');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,7 @@ app.get('/', (req, res) => {
       cities: '/api/shipping/cities?province=ID',
       calculateCost: 'POST /api/shipping/cost',
       createInvoice: 'POST /api/payment/create-invoice',
+      viewInvoice: 'GET /api/invoice/:id',
       webhook: 'POST /api/webhook/mayar'
     }
   });
@@ -51,6 +53,7 @@ app.get('/', (req, res) => {
 // API Routes
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/invoice', invoiceRoutes);
 app.use('/api/webhook', webhookRoutes);
 
 // Error Handler
