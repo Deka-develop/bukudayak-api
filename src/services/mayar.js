@@ -109,6 +109,15 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
       throw new Error(resData?.messages || 'Gagal memperoleh link pembayaran dari Mayar');
     }
 
+    if (resData?.data?.id) {
+      invoiceCache.set(resData.data.id, resData.data.id);
+      if (safeOrderId) invoiceCache.set(safeOrderId, resData.data.id);
+      const match = (invoiceUrl || '').match(/\/invoices\/([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        invoiceCache.set(match[1], resData.data.id);
+      }
+    }
+
     return {
       success: true,
       orderId: safeOrderId,
@@ -124,6 +133,9 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
   }
 }
 
+// In-memory cache for mapping orderId or short code to invoice UUID
+const invoiceCache = new Map();
+
 /**
  * Retrieve invoice details from Mayar
  */
@@ -131,16 +143,47 @@ async function getInvoice(invoiceId) {
   if (!isValidApiKey(MAYAR_API_KEY)) {
     throw new Error('MAYAR_API_KEY belum dikonfigurasi di file environment .env server!');
   }
-  const response = await axios.get(`https://api.mayar.id/hl/v1/invoice/${invoiceId}`, {
-    headers: {
-      Authorization: `Bearer ${MAYAR_API_KEY}`
-    },
-    timeout: 10000
-  });
-  return response.data?.data;
+
+  let targetId = invoiceCache.get(invoiceId) || invoiceId;
+
+  // Try direct lookup with targetId
+  try {
+    const response = await axios.get(`https://api.mayar.id/hl/v1/invoice/${targetId}`, {
+      headers: {
+        Authorization: `Bearer ${MAYAR_API_KEY}`
+      },
+      timeout: 10000
+    });
+    return response.data?.data;
+  } catch (err) {
+    // If not found and input might be a short code or orderId, try listing recent invoices
+    try {
+      const listRes = await axios.get(`https://api.mayar.id/hl/v1/invoice?page=1&pageSize=20`, {
+        headers: {
+          Authorization: `Bearer ${MAYAR_API_KEY}`
+        },
+        timeout: 10000
+      });
+      const invoices = listRes.data?.data || [];
+      const found = invoices.find(inv => 
+        inv.id === invoiceId ||
+        (inv.link && inv.link.includes(invoiceId)) ||
+        (inv.transactions && inv.transactions.some(t => t.extraData?.orderId === invoiceId))
+      );
+      if (found) {
+        invoiceCache.set(invoiceId, found.id);
+        return found;
+      }
+    } catch (listErr) {
+      console.error('[Mayar List Invoices Error]', listErr.message);
+    }
+    throw err;
+  }
 }
 
 module.exports = {
   createInvoice,
-  getInvoice
+  getInvoice,
+  invoiceCache
 };
+

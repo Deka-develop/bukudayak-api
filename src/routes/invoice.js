@@ -39,6 +39,12 @@ router.get('/:id', async (req, res) => {
       }
     }
 
+    // Filter out shipping if it's in items to prevent duplicate rows
+    const productItems = items.filter(it => {
+      const desc = (it.description || it.title || '').toLowerCase();
+      return !desc.startsWith('ongkos kirim') && !desc.startsWith('ongkir');
+    });
+
     const isPaid = (invoice.status || '').toLowerCase() === 'paid';
     const statusText = isPaid ? 'LUNAS (PAID)' : 'MENUNGGU PEMBAYARAN';
     const statusColor = isPaid ? '#10B981' : '#F59E0B';
@@ -327,7 +333,7 @@ router.get('/:id', async (req, res) => {
             </tr>
           </thead>
           <tbody>
-            ${items.length > 0 ? items.map((it, idx) => `
+            ${productItems.length > 0 ? productItems.map((it, idx) => `
               <tr>
                 <td class="text-center">${idx + 1}</td>
                 <td><strong>${it.description || it.title}</strong></td>
@@ -345,7 +351,7 @@ router.get('/:id', async (req, res) => {
               </tr>
             `}
             <tr>
-              <td class="text-center">${(items.length || 1) + 1}</td>
+              <td class="text-center">${(productItems.length || 1) + 1}</td>
               <td><strong>Ongkos Kirim (${courier})</strong></td>
               <td class="text-center">1</td>
               <td class="text-right">Rp ${shippingCost.toLocaleString('id-ID')}</td>
