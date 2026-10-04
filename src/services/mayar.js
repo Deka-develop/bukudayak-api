@@ -62,19 +62,24 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
     cleanMobile = '62' + cleanMobile;
   }
 
+  const isEbookOrder = shippingCost === 0 || 
+                       (shipping.courier || '').toLowerCase().includes('digital') || 
+                       (shipping.courier || '').toLowerCase().includes('ebook');
+
   const extraData = {
     orderId: String(safeOrderId),
     customerName: String(customer.name || '-'),
     customerPhone: String(customer.phone || '-'),
     customerEmail: String(customer.email || '-'),
-    shippingAddress: String(customer.address || '-'),
-    shippingProvince: String(customer.province || '-'),
-    shippingCity: String(customer.city || '-'),
-    courierName: String(shipping.courier || '-'),
-    courierService: String(shipping.service || '-'),
+    shippingAddress: String(customer.address || (isEbookOrder ? 'Pengiriman Digital (Email & WA)' : '-')),
+    shippingProvince: String(customer.province || (isEbookOrder ? 'Digital' : '-')),
+    shippingCity: String(customer.city || (isEbookOrder ? 'Digital Delivery' : '-')),
+    courierName: String(isEbookOrder ? 'Digital Delivery' : (shipping.courier || '-')),
+    courierService: String(isEbookOrder ? 'Ebook (Email & WhatsApp)' : (shipping.service || '-')),
     shippingCost: String(shippingCost),
     subtotalBooks: String(totalAmount - shippingCost),
     grandTotal: String(totalAmount),
+    isEbookOrder: String(isEbookOrder ? 'true' : 'false'),
     itemsJson: JSON.stringify(invoiceItems)
   };
   if (customer.postalCode && String(customer.postalCode).trim()) {
@@ -86,7 +91,7 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
     email: customer.email || 'customer@bukudayak.com',
     mobile: cleanMobile,
     redirectUrl: `${MAYAR_REDIRECT_URL}&order_id=${safeOrderId}`,
-    description: `Pembelian Buku Dayak - Pesanan #${safeOrderId}`,
+    description: isEbookOrder ? `Pembelian Ebook (Digital) - Pesanan #${safeOrderId}` : `Pembelian Buku Dayak - Pesanan #${safeOrderId}`,
     expiredAt: expiredAt,
     items: invoiceItems,
     extraData: extraData

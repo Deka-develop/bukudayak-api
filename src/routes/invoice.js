@@ -45,6 +45,11 @@ router.get('/:id', async (req, res) => {
       return !desc.startsWith('ongkos kirim') && !desc.startsWith('ongkir');
     });
 
+    const isEbookOrder = extra.isEbookOrder === 'true' || 
+                         shippingCost === 0 || 
+                         (courier || '').toLowerCase().includes('digital') || 
+                         (courier || '').toLowerCase().includes('ebook');
+
     const isPaid = (invoice.status || '').toLowerCase() === 'paid';
     const statusText = isPaid ? 'LUNAS (PAID)' : 'MENUNGGU PEMBAYARAN';
     const statusColor = isPaid ? '#10B981' : '#F59E0B';
@@ -314,10 +319,16 @@ router.get('/:id', async (req, res) => {
           <p><i class="far fa-envelope" style="color:#666; margin-right:4px;"></i> ${customerEmail}</p>
         </div>
         <div class="info-box">
-          <h3>Tujuan Pengiriman & Kurir:</h3>
-          <p>${address}</p>
-          <p><strong>${city}, ${province} ${postalCode}</strong></p>
-          <p style="margin-top:6px; color:var(--primary); font-weight:600;"><i class="fas fa-shipping-fast"></i> ${courier}</p>
+          <h3>${isEbookOrder ? 'Metode Pengiriman:' : 'Tujuan Pengiriman & Kurir:'}</h3>
+          ${isEbookOrder ? `
+            <p><strong style="color:#2563EB;"><i class="fas fa-file-pdf"></i> Pengiriman Digital (Ebook)</strong></p>
+            <p>File dikirimkan ke Email: <strong>${customerEmail}</strong></p>
+            <p style="margin-top:6px; color:#10B981; font-weight:600;"><i class="fas fa-check-circle"></i> Bebas Ongkos Kirim (Digital Delivery)</p>
+          ` : `
+            <p>${address}</p>
+            <p><strong>${city}, ${province} ${postalCode}</strong></p>
+            <p style="margin-top:6px; color:var(--primary); font-weight:600;"><i class="fas fa-shipping-fast"></i> ${courier}</p>
+          `}
         </div>
       </div>
 
@@ -350,13 +361,23 @@ router.get('/:id', async (req, res) => {
                 <td class="text-right">Rp ${subtotalBooks.toLocaleString('id-ID')}</td>
               </tr>
             `}
-            <tr>
-              <td class="text-center">${(productItems.length || 1) + 1}</td>
-              <td><strong>Ongkos Kirim (${courier})</strong></td>
-              <td class="text-center">1</td>
-              <td class="text-right">Rp ${shippingCost.toLocaleString('id-ID')}</td>
-              <td class="text-right">Rp ${shippingCost.toLocaleString('id-ID')}</td>
-            </tr>
+            ${shippingCost > 0 ? `
+              <tr>
+                <td class="text-center">${(productItems.length || 1) + 1}</td>
+                <td><strong>Ongkos Kirim (${courier})</strong></td>
+                <td class="text-center">1</td>
+                <td class="text-right">Rp ${shippingCost.toLocaleString('id-ID')}</td>
+                <td class="text-right">Rp ${shippingCost.toLocaleString('id-ID')}</td>
+              </tr>
+            ` : `
+              <tr>
+                <td class="text-center">${(productItems.length || 1) + 1}</td>
+                <td><strong>Pengiriman Digital (Ebook via Email & WhatsApp)</strong></td>
+                <td class="text-center">1</td>
+                <td class="text-right"><span style="color:#10B981; font-weight:600;">Rp 0</span></td>
+                <td class="text-right"><span style="color:#10B981; font-weight:600;">Rp 0 (Bebas Ongkir)</span></td>
+              </tr>
+            `}
           </tbody>
         </table>
       </div>
@@ -369,7 +390,7 @@ router.get('/:id', async (req, res) => {
           </div>
           <div class="totals-row">
             <span>Ongkos Kirim:</span>
-            <span>Rp ${shippingCost.toLocaleString('id-ID')}</span>
+            <span>${shippingCost > 0 ? `Rp ${shippingCost.toLocaleString('id-ID')}` : '<span style="color:#10B981; font-weight:700;"><i class="fas fa-check-circle"></i> Rp 0 (Bebas Ongkir)</span>'}</span>
           </div>
           <div class="totals-row grand-total">
             <span>Total Tagihan:</span>
