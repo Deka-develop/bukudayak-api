@@ -62,6 +62,24 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
     cleanMobile = '62' + cleanMobile;
   }
 
+  const extraData = {
+    orderId: String(safeOrderId),
+    customerName: String(customer.name || '-'),
+    customerPhone: String(customer.phone || '-'),
+    customerEmail: String(customer.email || '-'),
+    shippingAddress: String(customer.address || '-'),
+    shippingProvince: String(customer.province || '-'),
+    shippingCity: String(customer.city || '-'),
+    courierName: String(shipping.courier || '-'),
+    courierService: String(shipping.service || '-'),
+    shippingCost: String(shippingCost),
+    subtotalBooks: String(totalAmount - shippingCost),
+    grandTotal: String(totalAmount)
+  };
+  if (customer.postalCode && String(customer.postalCode).trim()) {
+    extraData.shippingPostalCode = String(customer.postalCode).trim();
+  }
+
   const payload = {
     name: customer.name || 'Pembeli Buku Dayak',
     email: customer.email || 'customer@bukudayak.com',
@@ -70,21 +88,7 @@ async function createInvoice({ customer, items = [], shipping = {}, orderId }) {
     description: `Pembelian Buku Dayak - Pesanan #${safeOrderId}`,
     expiredAt: expiredAt,
     items: invoiceItems,
-    extraData: {
-      orderId: safeOrderId,
-      customerName: customer.name,
-      customerPhone: customer.phone,
-      customerEmail: customer.email,
-      shippingAddress: customer.address,
-      shippingProvince: customer.province,
-      shippingCity: customer.city,
-      shippingPostalCode: customer.postalCode || '',
-      courierName: shipping.courier || '-',
-      courierService: shipping.service || '-',
-      shippingCost: shippingCost,
-      subtotalBooks: totalAmount - shippingCost,
-      grandTotal: totalAmount
-    }
+    extraData: extraData
   };
 
   try {
