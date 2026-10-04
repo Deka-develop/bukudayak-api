@@ -7,12 +7,34 @@ router.post('/create-invoice', async (req, res) => {
   try {
     const { customer, items, shipping, orderId } = req.body;
 
+    const isEbookOrder = Number(shipping?.cost) === 0 || 
+                         (shipping?.courier || '').toLowerCase().includes('digital') || 
+                         (shipping?.courier || '').toLowerCase().includes('ebook');
+
     // Validation
-    if (!customer || !customer.name || !customer.phone || !customer.address) {
+    if (!customer || !customer.name || !customer.phone) {
       return res.status(400).json({
         success: false,
-        message: 'Data nama, nomor telepon/WA, dan alamat lengkap wajib diisi!'
+        message: 'Data nama dan nomor telepon/WA wajib diisi!'
       });
+    }
+
+    if (isEbookOrder && !customer.email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email wajib diisi untuk pengiriman file Ebook!'
+      });
+    }
+
+    if (!isEbookOrder && !customer.address) {
+      return res.status(400).json({
+        success: false,
+        message: 'Alamat lengkap pengiriman buku fisik wajib diisi!'
+      });
+    }
+
+    if (isEbookOrder && !customer.address) {
+      customer.address = 'Pengiriman Digital (Email & WhatsApp)';
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
